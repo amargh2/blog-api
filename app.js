@@ -48,14 +48,14 @@ passport.use(new LocalStrategy( 'local',
 
 passport.use(new JWTStrategy(
   {secretOrKey:process.env.ACCESS_TOKEN_SECRET, 
-    jwtFromRequest:ExtractJWT.fromAuthHeaderAsBearerToken},
+    jwtFromRequest:ExtractJWT.fromAuthHeaderAsBearerToken()},
   async (jwt_payload, done) => {
     try {
       console.log(jwt_payload)
       const user = await User.findOne({username: jwt_payload.username});
       user ? done(null, user) : done(null, false);
     } catch (error) {
-      return done(err, false);
+      return done(error, false);
     }
   }
 ));
@@ -70,9 +70,10 @@ app.post('/login', async(req, res) => {
     const password = req.body.password;
     if (username === user.username) {
       if (await bcrypt.compare(password, user.password).then(res => res) === true) {
+        console.log(username)
         const opts = {};
-        const token = await jwt.sign(username, password, opts)
-        console.log('the token:' + token)
+        const token = await jwt.sign({username: username, id:user.id}, process.env.ACCESS_TOKEN_SECRET, opts)
+        console.log('the token: ' + token + 'the token username: ' + token.username)
         return res.status(200).json({
           message:'Authorization passed.',
           token
