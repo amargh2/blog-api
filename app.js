@@ -117,7 +117,7 @@ app.post('/posts/new', passport.authenticate('jwt', {session:false}), async (req
 //GET ALL posts
 app.get('/posts', async (req, res) => {
   try {
-    const posts =  mongoose.connect(process.env.MONGO_URI) && await Post.find({})
+    const posts =  mongoose.connect(process.env.MONGO_URI) && await Post.find({}).sort({date:-1})
     res.json({posts})
   } catch (error) {
     res.json({error})
