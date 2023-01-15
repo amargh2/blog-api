@@ -124,6 +124,15 @@ app.get('/posts', async (req, res) => {
   }
 })
 
+app.get('/posts/:id', async (req, res) => {
+  try {
+    const post = mongoose.connect(process.env.MONGO_URI) && await Post.findById(req.params.id)
+    res.json({post})
+  } catch (error) {
+    res.json({error})
+  }
+})
+
 //GET the index, which is currently a check for api functionality
 app.get('/', (req, res) => res.json({message:'Welcome to the API.'}))
 
