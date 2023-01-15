@@ -114,7 +114,7 @@ app.post('/posts/new', passport.authenticate('jwt', {session:false}), async (req
 })
 
 
-//GET posts
+//GET ALL posts
 app.get('/posts', async (req, res) => {
   try {
     const posts =  mongoose.connect(process.env.MONGO_URI) && await Post.find({})
@@ -124,6 +124,7 @@ app.get('/posts', async (req, res) => {
   }
 })
 
+//GET specific post by id
 app.get('/posts/:id', async (req, res) => {
   try {
     const post = mongoose.connect(process.env.MONGO_URI) && await Post.findById(req.params.id)
