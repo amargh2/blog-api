@@ -97,6 +97,7 @@ app.get('/secretpage', passport.authenticate('jwt', {session:false}), (req, res)
   res.json({message: "Welcome to the jungle. There's fun. There's games."})
 })
 
+//POST a ew post
 app.post('/posts/new', passport.authenticate('jwt', {session:false}), async (req, res) => {
   try {
     const post = new Post({
@@ -112,16 +113,18 @@ app.post('/posts/new', passport.authenticate('jwt', {session:false}), async (req
   }
 })
 
+
+//GET posts
 app.get('/posts', async (req, res) => {
   try {
-    await mongoose.connect(process.env.MONGO_URI)
-    const posts = Post.find({})
+    const posts =  mongoose.connect(process.env.MONGO_URI) && await Post.find({})
     res.json({posts})
   } catch (error) {
     res.json({error})
   }
 })
 
+//GET the index, which is currently a check for api functionality
 app.get('/', (req, res) => res.json({message:'Welcome to the API.'}))
 
 app.listen(3000, ()=> console.log('Server listening on port 3000.'))
