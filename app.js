@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const post = require('./routes/post');
 const bodyParser = require('body-parser');
 const User = require('./models/user');
+const Post = require('./models/post')
 const mongoose = require('mongoose')
 const auth = require('./auth');
 const morgan = require('morgan');
@@ -51,8 +52,9 @@ passport.use(new JWTStrategy(
     jwtFromRequest:ExtractJWT.fromAuthHeaderAsBearerToken()},
   async (jwt_payload, done) => {
     try {
+      mongoose.connect(process.env.MONGO_URI)
       console.log(jwt_payload)
-      const user = await User.findOne({username: jwt_payload.username});
+      const user = await User.findById(jwt_payload.id);
       user ? done(null, user) : done(null, false);
     } catch (error) {
       return done(error, false);
@@ -90,9 +92,34 @@ app.post('/login', async(req, res) => {
 
 
 
-
+//just a verification of the jwt strategy
 app.get('/secretpage', passport.authenticate('jwt', {session:false}), (req, res) => {
-  res.json({message: 'Welcome to the jungle.'})
+  res.json({message: "Welcome to the jungle. There's fun. There's games."})
+})
+
+app.post('/posts/new', passport.authenticate('jwt', {session:false}), async (req, res) => {
+  try {
+    const post = new Post({
+      author: await User.findOne({username:'ideogesis'}),
+      date: new Date(),
+      subject: req.body.subject,
+      message: req.body.message,
+    })
+    await post.save()
+    res.json({message:'Post added.'})
+  } catch (error) {
+    res.json({error})
+  }
+})
+
+app.get('/posts', async (req, res) => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI)
+    const posts = Post.find({})
+    res.json({posts})
+  } catch (error) {
+    res.json({error})
+  }
 })
 
 app.get('/', (req, res) => res.json({message:'Welcome to the API.'}))
