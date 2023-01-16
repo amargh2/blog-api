@@ -2,7 +2,8 @@
 
 //env initilize
 require('dotenv').config();
-
+const localStrategy = require('./auth').localStrategy
+const jwtStrategy = require('./auth').jwtStrategy
 
 const bodyParser = require('body-parser');
 
@@ -36,41 +37,26 @@ app.use(express.static(__dirname + '/public'));
 //logging with morgan
 app.use(morgan('dev'))
 
-//Local strategy authenticates the user; the jwt is passed to the user at the login route
-passport.use(new LocalStrategy( 'local',
-  {session:false},
-  async (username, password, done) => {
-    try {
-      //find user. terminate if no user is found.
-      const user = User.findOne({username})
-      if (!user) done(null, false, {message:'User not found.'})
-      //validate will be a true or false value and is accomplished through Mongoose plugin
-      const validate = await user.isValidPassword(password)
-      if (!validate) done(null, false, {message:'Incorrect password.'})
-      //Success, return the user and login message.
-      return done(null, user, {message:'Logged in successfully.'})
-    } catch (error) {
-      return done(error)
-    }
-  }
-))
+//connect to database
+mongoose.connect(process.env.MONGO_URI)
 
-// JWT strategy - options are passed, followed by the verify function (done)
-passport.use(new JWTStrategy(
-  {secretOrKey:process.env.ACCESS_TOKEN_SECRET, 
-    jwtFromRequest:ExtractJWT.fromAuthHeaderAsBearerToken()},
-  async (jwt_payload, done) => {
-    try {
-      const user = mongoose.connect(process.env.MONGO_URI) && await User.findById(jwt_payload.id);
-      user ? done(null, user) : done(null, false);
-    } catch (error) {
-      return done(error, false);
-    }
+//Local strategy authenticates the user; the jwt is passed to the user at the login route
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+    User.findOne({ username: username }, function (err, user) {
+      if (err) { return done(err); }
+      if (!user) { return done(null, false); }
+      if (!user.verifyPassword(password)) { return done(null, false); }
+      return done(null, user);
+    });
   }
 ));
 
+// JWT strategy - options are passed, followed by the verify function (done)
+passport.use('jwt', jwtStrategy)
 
-app.post('/login', async(req, res) => {
+
+/*app.post('/login', async(req, res) => {
   try {
     const user = mongoose.connect(process.env.MONGO_URI) && await User.findOne({username:'ideogesis'})
     const username = req.body.username;
@@ -91,6 +77,21 @@ app.post('/login', async(req, res) => {
     res.json({error:err})
 }
   
+})*/
+
+
+app.post('/login', passport.authenticate('local', {session:false, failureRedirect:'/', failureMessage:true}), async(req,res) => {
+  try {
+    const opts = {}
+    const token = jwt.sign({username: req.username, 
+      id:req.user.id}, 
+      process.env.ACCESS_TOKEN_SECRET, 
+      opts)
+    console.log(token)
+    return res.json({message:'Authorization successful', token})
+  } catch (error) {
+    return res.json({error: error.message})
+  }
 })
 
 
@@ -120,7 +121,7 @@ app.post('/posts/new', passport.authenticate('jwt', {session:false}), async (req
 //GET ALL posts
 app.get('/posts', async (req, res) => {
   try {
-    const posts =  mongoose.connect(process.env.MONGO_URI) && await Post.find({}).sort({date:-1})
+    const posts = await Post.find({}).sort({date:-1})
     res.json({posts})
   } catch (error) {
     res.json({error})
@@ -130,7 +131,7 @@ app.get('/posts', async (req, res) => {
 //GET specific post by id
 app.get('/posts/:id', async (req, res) => {
   try {
-    const post = mongoose.connect(process.env.MONGO_URI) && await Post.findById(req.params.id)
+    const post = await Post.findById(req.params.id)
     res.json({post})
   } catch (error) {
     res.json({error})

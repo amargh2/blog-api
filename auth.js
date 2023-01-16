@@ -1,37 +1,33 @@
-// THIS IS THE ONE. THIS IS THE PASSPORT CONFIG.
-const passport = require('passport');
-const localStrategy = require('passport-local').Strategy;
-const User= require('./models/user');
+//Auth strategies - local auth with JWT's for protected routes/endpoints
+const passport = require("passport");
+const LocalStrategy = require('passport-local');
 const JWTStrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt
-
-passport.use(new localStrategy( 'local',
-  {session:false},
-  async (username, password, done) => {
-    try {
-      //find user. terminate if no user is found.
-      const user = User.findOne({username})
-      if (!user) done(null, false, {message:'User not found.'})
-      //validate will be a true or false value; 
-      //the user model has a bulit in validator with bcrypt
-      const validate = await user.isValidPassword(password)
-      if (!validate) done(null, false, {message:'Incorrect password.'})
-      //Success, return the user and login message.
-      return done(null, user, {message:'Logged in successfully.'})
-    } catch (error) {
-      return done(error)
-    }
+const bcrypt = require('bcryptjs');
+const jwt = require("jsonwebtoken");
+const Post = require('./models/post')
+const mongoose = require('mongoose')
+const User = require('./models/user')
+exports.localStrategy = new LocalStrategy(
+  function(username, password, done) {
+    User.findOne({ username: username }, function (err, user) {
+      if (err) { return done(err); }
+      if (!user) { return done(null, false); }
+      if (!user.verifyPassword(password)) { return done(null, false); }
+      return done(null, user);
+    });
   }
-))
+)
 
-/*passport.use(new JWTStrategy(
-  {secretOrKey:process.env.ACCESS_TOKEN_SECRET, jwtFromRequest:ExtractJWT.fromAuthHeaderAsBearerToken},
+exports.jwtStrategy = new JWTStrategy(
+  {secretOrKey:process.env.ACCESS_TOKEN_SECRET, 
+    jwtFromRequest:ExtractJWT.fromAuthHeaderAsBearerToken()},
   async (jwt_payload, done) => {
     try {
-      const user = await User.findOne({id: jwt_payload.username});
+      const user = mongoose.connect(process.env.MONGO_URI) && await User.findById(jwt_payload.id);
       user ? done(null, user) : done(null, false);
     } catch (error) {
-      return done(err, false);
+      return done(error, false);
     }
   }
-));*/
+);

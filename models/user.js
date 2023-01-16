@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const bcrypt =  require('bcryptjs')
-const passportLocalMongoose = require('passport-local-mongoose')
+const passportLocalMongoose = require('passport-local-mongoose');
 
 const User =  new Schema({
   first_name: String,
@@ -10,11 +10,11 @@ const User =  new Schema({
   password: String
 })
 
-User.methods.isValidPassword = async function(pw) {
+User.methods.verifyPassword = async function(password) {
     const user = this
-    console.log(user.password)
-    const compare = await bcrypt.compare(pw, user.password)
+    const compare = await bcrypt.compare(password, user.password)
     return compare
 }
+
 
 module.exports = mongoose.model('User', User)
