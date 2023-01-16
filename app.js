@@ -40,17 +40,8 @@ app.use(morgan('dev'))
 //connect to database
 mongoose.connect(process.env.MONGO_URI)
 
-//Local strategy authenticates the user; the jwt is passed to the user at the login route
-passport.use(new LocalStrategy(
-  function(username, password, done) {
-    User.findOne({ username: username }, function (err, user) {
-      if (err) { return done(err); }
-      if (!user) { return done(null, false); }
-      if (!user.verifyPassword(password)) { return done(null, false); }
-      return done(null, user);
-    });
-  }
-));
+// Passport local strategy
+passport.use('local', localStrategy)
 
 // JWT strategy - options are passed, followed by the verify function (done)
 passport.use('jwt', jwtStrategy)

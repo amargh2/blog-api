@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken");
 const Post = require('./models/post')
 const mongoose = require('mongoose')
 const User = require('./models/user')
+
 exports.localStrategy = new LocalStrategy(
   function(username, password, done) {
     User.findOne({ username: username }, function (err, user) {
