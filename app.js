@@ -4,8 +4,10 @@
 require('dotenv').config();
 const localStrategy = require('./auth').localStrategy
 const jwtStrategy = require('./auth').jwtStrategy
-
 const bodyParser = require('body-parser');
+
+var cors = require('cors')
+
 
 //mongoose stuff
 const User = require('./models/user');
@@ -18,6 +20,7 @@ const morgan = require('morgan');
 //Express instantiation
 const express = require('express');
 const app = express();
+app.use(cors())
 
 
 //passport and JWT authentication stuff
@@ -73,7 +76,7 @@ passport.use('jwt', jwtStrategy)
 
 app.post('/login', passport.authenticate('local', {session:false, failureRedirect:'/', failureMessage:true}), async(req,res) => {
   try {
-    const opts = {}
+    const opts = {expiresIn:'1hr'}
     const token = jwt.sign({username: req.username, 
       id:req.user.id}, 
       process.env.ACCESS_TOKEN_SECRET, 
@@ -132,4 +135,4 @@ app.get('/posts/:id', async (req, res) => {
 //GET the index, which is currently a check for that the api is sending JSON
 app.get('/', (req, res) => res.json({message:'Welcome to the API.'}))
 
-app.listen(3000, ()=> console.log('Server listening on port 3000.'))
+app.listen(3001, ()=> console.log('Server listening on port 3001.'))

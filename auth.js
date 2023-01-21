@@ -11,12 +11,13 @@ const User = require('./models/user')
 
 exports.localStrategy = new LocalStrategy(
   function(username, password, done) {
-    User.findOne({ username: username }, function (err, user) {
+    User.findOne({ username: username }, async function (err, user) {
       if (err) { return done(err); }
       if (!user) { return done(null, false); }
-      if (!user.verifyPassword(password)) { return done(null, false); }
-      return done(null, user);
-    });
+      if (await bcrypt.compare(password, user.password) === false) return done(null, false);
+      if (await bcrypt.compare(password, user.password) === true) return done(null, user);
+      else return done(null, false)
+  });
   }
 )
 

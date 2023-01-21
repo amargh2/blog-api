@@ -13,7 +13,7 @@ const User =  new Schema({
 User.methods.verifyPassword = async function(password) {
     const user = this
     const compare = await bcrypt.compare(password, user.password)
-    return compare
+    await compare
 }
 
 
